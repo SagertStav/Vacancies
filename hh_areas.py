@@ -5,7 +5,7 @@ import json          # Для обработки полученных резул
 import time          # Для задержки между запросами
 import os            # Для работы с файлами
 import pandas as pd  # Для формирования датафрейма с результатами
-import pprint
+import func
 
 def getAreas(regions):
     req = requests.get('https://api.hh.ru/areas')
@@ -17,28 +17,19 @@ def getAreas(regions):
         for i in range(len(k['areas'])):
             if len(k['areas'][i]['areas']) != 0:                      # Если у зоны есть внутренние зоны
                 for j in range(len(k['areas'][i]['areas'])):
-                    if includes(regions, k['areas'][i]['name']) or  includes(regions, k['areas'][i]['areas'][j]['name']):
+                    if func.includes(regions, k['areas'][i]['name']) or  func.includes(regions, k['areas'][i]['areas'][j]['name']):
                        areas.append([k['id'],
                                   k['name'],
                                   k['areas'][i]['areas'][j]['id'],
                                   k['areas'][i]['areas'][j]['name']])
             else:                                                                # Если у зоны нет внутренних зон
-                if includes(regions, k['areas'][i]['name']):
+                if func.includes(regions, k['areas'][i]['name']):
                     areas.append([k['id'],
                               k['name'],
                               k['areas'][i]['id'],
                               k['areas'][i]['name']])
     return areas
 
-def includes(words_list, phrase):
-    incl=True
-    for i in words_list:
-
-        for j in i.split("*"):
-          if not(j in phrase):
-             incl = False
-             break
-    return incl
 
 req = requests.get('https://api.hh.ru/areas').json()
 print(req)

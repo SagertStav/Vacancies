@@ -11,7 +11,10 @@
 •	Пользователь может вывести из файла набор вакансий по определенным критериям."""
 
 import api_class
+import func
+
 # Создание экземпляра класса для работы с API сайтов с вакансиями
+
 hh_api = api_class.HeadHunterAPI()
 superjob_api = api_class.SuperJobAPI()
 
@@ -27,62 +30,43 @@ superjob_api = api_class.SuperJobAPI()
 # Функция для взаимодействия с пользователем
 def user_interaction():
   platforms = ["HeadHunter", "SuperJob"]
+  print('Получим курсы валют с HeadHunter (ждите):')
+  func.narrow_down_print(str(api_class.HeadHunterAPI.get_exchange_rate()))
+
   while True:
-    search_query = input("Введите поисковый запрос (например, бухгалтер, программист): ") # например, бухгалтер, программист?
+    search_query = input("Введите поисковый запрос (например, бухгалтер, программист): ")
     top_n = int(input("Введите количество вакансий для вывода в топ N: "))
-    filter_words = input("Введите ключевые слова для фильтрации вакансий (через +, например, SQL+VBA): ").split("+")
+    town_area=input("Введите маску ГОРОДОВ поиска через + (по умолчанию = 'Москва'. Можно: Ставрополь+Волгоград):")
+    town_area=('Москва' if town_area=='' else town_area).split("+")
+    filter_words = input('Введите ключевые слова для фильтрации вакансий (через +, например, SQL+VBA. По умолчанию ""): ')
+    filter_words = ('' if filter_words=='' else filter_words).split("+")
   # Получение вакансий с разных платформ: сначала сохраняю в память (список экземпляров класса Vacancies, потом - в свой JSON-файл
-    hh_vacancies = hh_api.get_vacancies(search_query) #"Python"
-    superjob_vacancies = superjob_api.get_vacancies(search_query) #"Python"
-    print(hh_vacancies)
-    print(superjob_vacancies)
+    hh_vacancies = hh_api.get_vacancies(search_query)
+    #break
+    superjob_vacancies = superjob_api.get_vacancies(search_query)
+    #print(hh_vacancies)
+    #print(superjob_vacancies)
 
-    filtered_vacancies = filter_vacancies(filter_words, hh_vacancies, superjob_vacancies)
-    # Пользователь может вывести из файла набор вакансий по определенным критериям. Доработаю фильтр ЗП и территории работодателя
-    print('Результат фильтра:', filtered_vacancies)
-
-    if not filtered_vacancies:
-        print("Нет вакансий, соответствующих заданным критериям.")
-    else:
-        sorted_vacancies = sort_vacancies(filtered_vacancies)
-        top_vacancies = get_top_vacancies(sorted_vacancies, top_n)
-        print_vacancies(top_vacancies)
+    api_class.Vacancy.top_show(filter_words, town_area, top_n)
 
     while True:
       q=input("Дальнейшие действия: - введите [S] для сохранения в файл (без фильтрации), [Q] для выхода, [М]ore - для нового запроса вакансий': \n R - для вывода результата фильтра по ранее сохраненным записям (БЕЗ ДОСТУПА К ИНТЕРНЕТ),  C - изменить критерии: ")
       if q.lower()=="q":
-          break
+          exit("Спасибо за внимание! До свидания!")
       if q.lower() == "s":
           api_class.Vacancy.save_all_vacancies('vacancies.json')
 
-      if q.lower() in ("сc"): #латинская/русская - неважно. Criteria
-         pass #здесь реализовать смену города/области - area, с возможностью указания нескольких в маске(шаблоне) через +, а также ввод условия по ожидаемой ЗП к выводу вакансий
-         return
+      if q.lower() in ("сc", "m"): #латинская/русская - неважно. Criteria
+         #pass #здесь помимо смены ключевых слов можно реализовать ввод условия по ожидаемой ЗП к выводу вакансий
+         break
 
       if q.lower() == "r": #читаем все Vacancy из старого файла
-         #сначала очистим
-         Vacancy.vac_list = json.loads(array)
-
-
-         pass
-def filter_vacancies(filter_words, hh_vacancies, superjob_vacancies):
-# фильтр поставил первым аргументом, чтобы в дальнейшем реализовать возможность неограниченного списка аргументов по множеству источников получения вакансий
-   #думаю вставлю простую лямбда-функцию. Тут осталось отфильтровать по ЗП, по территории/региону, которые [критерии] в настройки/константы класса можно вписать
-   return api_class.Vacancy.vac_list  #доработаю применение фильтра
-
-def sort_vacancies(vacancies:list):
-    #print(vacancies)
-    return vacancies #sorted(vacancies, key=lambda d: d['vac_ref']['salary_t0'])
-    #return vacancies.sort()   #доработаю в классе возможность СОРТИРОВКИ ПО ЗП (+ можно по дате объявления, региону. Но тогда эти поля в классе надо объявить)
-
-def get_top_vacancies(vacancies:list, top_n):
-    return vacancies[:top_n]
-
-def print_vacancies(vacancies:list):
-    for v in vacancies:
-        print(v.__str__())
+         api_class.Vacancy.read_vacancies_from_file('vacancies.json')
+         api_class.Vacancy.top_show(filter_words, town_area, top_n)
 
 
 
 if __name__ == "__main__":
+    #api_class.Vacancy.read_vacancies_from_file('vacancies.json') #- чтение файла работает
+
     user_interaction()
